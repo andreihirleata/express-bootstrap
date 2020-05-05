@@ -11,7 +11,7 @@ const mainController = (req, res) => {
 const allJokesController = (req, res) => {
   request('https://api.icndb.com/jokes', (error, jokesApiResponse) => {
     if (error) {
-      console.log(error);
+      return res.status(error.statusCode).send({ error: error.message });
     }
 
     const parsedResponse = JSON.parse(jokesApiResponse.body);
@@ -27,15 +27,24 @@ const randomJokeController = (req, res) => {
       res.send({ randomJoke: response.data.value });
     })
     .catch(error => {
-      console.log(error);
+      return res.status(error.statusCode).send({ error: error.message });
     });
 };
 
-const personalJokeController = (req, res) => {
-  res.send({
-    message: 'This is the personal joke endpoint.',
-  });
+const personalJokeController = async (req, res) => {
+  const { first, last } = req.params;
+
+  try {
+    const response = await axios.get(
+      `https://api.icndb.com/jokes/random?firstName=${first}&lastName=${last}&exclude=[explicit]`,
+    );
+
+    return res.send({ personalJoke: response.data.value });
+  } catch (error) {
+    return res.status(error.statusCode).send({ error: error.message });
+  }
 };
+
 module.exports = {
   mainController,
   allJokesController,
