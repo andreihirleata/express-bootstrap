@@ -5,14 +5,16 @@ const request = require('supertest');
 const nock = require('nock');
 const app = require('../src/app');
 
-it('GET / should respond with a welcome message!', done => {
-  request(app)
-    .get('/')
-    .then(res => {
-      expect(res.statusCode).toEqual(200);
-      expect(res.body.message).toEqual('Welcome to my jokes API!');
-      done();
-    });
+describe('GET / - Homgepage', () => {
+  it('should respond with a welcome message!', done => {
+    request(app)
+      .get('/')
+      .then(res => {
+        expect(res.statusCode).toEqual(200);
+        expect(res.text).toContain('Welcome to my Jokes API');
+        done();
+      });
+  });
 });
 
 describe('GET /jokes', () => {
@@ -114,7 +116,7 @@ describe('GET /joke/random', () => {
   });
 });
 describe('GET /joke/personal/{string}/{string}', () => {
-  it('should respond with specific joke message', async () => {
+  it('should respond with specific joke message', done => {
     const mockResponse = {
       type: 'success',
       value: {
@@ -128,20 +130,26 @@ describe('GET /joke/personal/{string}/{string}', () => {
       .query({ exclude: '[explicit]', firstName: 'andrei', lastName: 'hirleata' })
       .reply(200, mockResponse);
 
-    const res = await request(app).get('/joke/personal/andrei/hirleata');
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.personalJoke).toEqual(mockResponse.value);
+    request(app)
+      .get('/joke/personal/andrei/hirleata')
+      .then(res => {
+        expect(res.statusCode).toEqual(200);
+        expect(res.body.personalJoke).toEqual(mockResponse.value);
+        done();
+      });
   });
-  it('should respond with an error message if something goes wrong', async () => {
+  it('should respond with an error message if something goes wrong', done => {
     nock('https://api.icndb.com')
       .get('/jokes/random')
       .query({ exclude: '[explicit]', firstName: 'andrei', lastName: 'hirleata' })
       .replyWithError({ statusCode: 404, message: 'Page not found' });
 
-    const res = await request(app).get('/joke/personal/andrei/hirleata');
-
-    expect(res.statusCode).toEqual(404);
-    expect(res.body.error).toEqual('Page not found');
+    request(app)
+      .get('/joke/personal/andrei/hirleata')
+      .then(res => {
+        expect(res.statusCode).toEqual(404);
+        expect(res.body.error).toEqual('Page not found');
+        done();
+      });
   });
 });
